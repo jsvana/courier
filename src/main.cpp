@@ -1,5 +1,6 @@
 #include "client.h"
 #include "curses.h"
+#include "queue.h"
 
 #include <iostream>
 #include <memory>
@@ -8,12 +9,21 @@
 
 void client_runner(Client& client) {
   client.run();
+  std::cout << "runner done" << std::endl;
 }
 
-void client_reader(Client& client, std::queue<std::string>& read_q) {
+void client_reader(Client& client, std::queue<std::string>& read_q, queue<bool>& end_signal) {
   while (true) {
-    read_q.push(client.read());
+    const auto line = client.read();
+    if (line != "") {
+      read_q.push(line);
+    }
+    if (!end_signal.empty()) {
+      end_signal.pop();
+      break;
+    }
   }
+  std::cout << "reader done" << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -31,9 +41,10 @@ int main(int argc, char** argv) {
     std::cout << "Connected to " << argv[1] << ":" << argv[2] << std::endl;
   }
 
+  queue<bool> end_signal;
   std::thread client_thread(client_runner, std::ref(client));
   std::queue<std::string> read_q;
-  std::thread client_reader_thread(client_reader, std::ref(client), std::ref(read_q));
+  std::thread client_reader_thread(client_reader, std::ref(client), std::ref(read_q), std::ref(end_signal));
 
   curses::init();
 
@@ -63,6 +74,8 @@ int main(int argc, char** argv) {
     if (c < 0) {
       continue;
     } else if (c == 27) { // Escape
+      client.stop();
+      end_signal.push(true);
       running = false;
     } else if (c == 13) { // Enter
       if (buf == "") {

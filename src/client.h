@@ -20,6 +20,8 @@ class Client {
 
   void run() { sock_.run(); }
 
+  void stop();
+
   const std::string read();
 
   const std::string next_id() {

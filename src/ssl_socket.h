@@ -35,6 +35,8 @@ class SslSocket {
 
   void run();
 
+  void stop() { io_service_.stop(); }
+
   void write(const std::string &message);
 
   void write_lines(const std::vector<std::string> &lines);

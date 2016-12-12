@@ -2,6 +2,11 @@
 
 #include <thread>
 
+void Client::stop() {
+  sock_.read_queue().push("\r\n");
+  sock_.stop();
+}
+
 const std::string Client::read() {
   // Read in batches because not all lines will end in \r\n
   std::size_t end;
