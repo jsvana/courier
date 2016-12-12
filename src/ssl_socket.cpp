@@ -1,5 +1,7 @@
 #include "ssl_socket.h"
 
+#include <iostream>
+
 bool SslSocket::connect() {
   boost::asio::ip::tcp::resolver resolver(io_service_);
   boost::asio::ip::tcp::resolver::query query(host_, port_);
@@ -33,7 +35,7 @@ void SslSocket::run() {
 }
 
 void SslSocket::write(const std::string &message) {
-  boost::asio::write(socket_, boost::asio::buffer(message + LINE_SEP));
+  boost::asio::write(socket_, boost::asio::buffer(message));
 }
 
 void SslSocket::write_lines(const std::vector<std::string> &lines) {

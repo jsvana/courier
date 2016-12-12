@@ -18,7 +18,7 @@ class Client {
 
   bool connect() { return sock_.connect(); }
 
-  void run();
+  void run() { sock_.run(); }
 
   const std::string read();
 
@@ -31,7 +31,6 @@ class Client {
 
   void write(const std::string& message) {
     const auto id = next_id();
-    std::cout << "[SEND] " << message << std::endl;
     sock_.write(next_id() + " " + message + "\r\n");
   }
 

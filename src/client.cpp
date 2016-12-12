@@ -2,23 +2,6 @@
 
 #include <thread>
 
-void reader(Client& client) {
-  while (true) {
-    const auto message = client.read();
-    std::cout << "[RECV] " << message << std::endl;
-  }
-}
-
-void Client::run() {
-  write("CAPABILITY");
-
-  std::thread reader_thread(reader, std::ref(*this));
-
-  sock_.run();
-
-  reader_thread.join();
-}
-
 const std::string Client::read() {
   // Read in batches because not all lines will end in \r\n
   std::size_t end;
