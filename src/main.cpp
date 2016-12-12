@@ -42,8 +42,6 @@ int main(int argc, char** argv) {
   // TODO(jsvana): arrange into screens that get pushed/poped instead of this
   // nonsense
   curses::Window log(0, 0, std::get<0>(dim), std::get<1>(dim) - 5);
-  log.add_line("foobar");
-  log.add_line("baz");
   log.enable_scroll();
 
   curses::Window input(0, std::get<1>(dim) - 5, std::get<0>(dim), 5);
@@ -58,7 +56,9 @@ int main(int argc, char** argv) {
     while (!read_q.empty()) {
       log.add_line(read_q.front());
       read_q.pop();
+      input.move_cursor(3 + buf.length(), 1);
     }
+
     char c = input.get_char();
     if (c < 0) {
       continue;
@@ -71,10 +71,16 @@ int main(int argc, char** argv) {
       client.write(buf);
       log.add_line("[SEND] " + buf);
       buf.clear();
+      input.clear_line(1);
+      input.write_string(1, 1, "> ");
+    } else if (c == 8 || c == 127) { // Backspace
+      buf = buf.substr(0, buf.length() - 1);
+      input.delete_char(3 + buf.length(), 1);
     } else {
       buf += c;
+      // "|> "
+      input.write_char(2 + buf.length(), 1, c);
     }
-    //input.move_cursor(1, 1);
   }
 
   client_thread.join();
