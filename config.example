@@ -1,0 +1,6 @@
+# Copy me to ~/.config/courier/courier.conf
+
+host=imap.gmail.com
+port=993
+user=awesome.user@gmail.com
+pass=my-great-password
