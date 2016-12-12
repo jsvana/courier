@@ -32,8 +32,7 @@ class Client {
   }
 
   void write(const std::string& message) {
-    const auto id = next_id();
-    sock_.write(next_id() + " " + message + "\r\n");
+    sock_.write(message + "\r\n");
   }
 
 };

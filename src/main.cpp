@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
   buf.reserve(256);
   while (running) {
     while (!read_q.empty()) {
-      log.add_line(read_q.front());
+      log.add_line("< " + read_q.front());
       read_q.pop();
       input.move_cursor(3 + buf.length(), 1);
     }
@@ -81,8 +81,9 @@ int main(int argc, char** argv) {
       if (buf == "") {
         continue;
       }
-      client.write(buf);
-      log.add_line("[SEND] " + buf);
+      const auto line = client.next_id() + " " + buf;
+      client.write(line);
+      log.add_line("> " + line);
       buf.clear();
       input.clear_line(1);
       input.write_string(1, 1, "> ");
