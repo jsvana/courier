@@ -10,6 +10,8 @@ void reader(Client& client) {
 }
 
 void Client::run() {
+  write("CAPABILITY");
+
   std::thread reader_thread(reader, std::ref(*this));
 
   sock_.run();
