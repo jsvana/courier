@@ -20,3 +20,7 @@ const std::string Client::read() {
 
   return line;
 }
+
+void Client::login(const std::string& username, const std::string& password) {
+  write(next_id() + " LOGIN " + username + " " + password);
+}

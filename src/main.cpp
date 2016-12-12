@@ -1,7 +1,10 @@
 #include "client.h"
+#include "config.h"
 #include "curses.h"
 #include "queue.h"
 
+#include <cstdlib>
+#include <experimental/filesystem>
 #include <iostream>
 #include <memory>
 #include <queue>
@@ -9,7 +12,6 @@
 
 void client_runner(Client& client) {
   client.run();
-  std::cout << "runner done" << std::endl;
 }
 
 void client_reader(Client& client, std::queue<std::string>& read_q, queue<bool>& end_signal) {
@@ -23,22 +25,49 @@ void client_reader(Client& client, std::queue<std::string>& read_q, queue<bool>&
       break;
     }
   }
-  std::cout << "reader done" << std::endl;
 }
 
 int main(int argc, char** argv) {
-  if (argc != 3) {
-    std::cerr << "Usage: " << argv[0] << " <host> <port>" << std::endl;
+  fs::path config_path;
+  if (argc > 1) {
+    config_path = argv[1];
+  } else {
+    config_path = fs::path(getenv("HOME")) / ".config/courier/courier.conf";
+  }
+
+  Config config(config_path);
+  if (!config.okay) {
     return 1;
   }
 
-  Client client{argv[1], argv[2]};
+  const auto host = config.get("host");
+  const auto port = config.get("port");
+
+  if (!host) {
+    std::cerr << "IMAP host not found in config" << std::endl;
+    return 1;
+  }
+
+  if (!port) {
+    std::cerr << "IMAP port not found in config" << std::endl;
+    return 1;
+  }
+
+  const auto user = config.get("user");
+  const auto pass = config.get("pass");
+
+  if (!user || !pass) {
+    std::cerr << "IMAP user or password not found in config" << std::endl;
+    return 1;
+  }
+
+  Client client(*host, *port);
 
   if (!client.connect()) {
-    std::cerr << "Error connecting to " << argv[1] << ":" << argv[2] << std::endl;
+    std::cerr << "Error connecting to " << *host << ":" << *port << std::endl;
     return 1;
   } else {
-    std::cout << "Connected to " << argv[1] << ":" << argv[2] << std::endl;
+    std::cout << "Connected to " << *host << ":" << *port << std::endl;
   }
 
   queue<bool> end_signal;
@@ -59,6 +88,8 @@ int main(int argc, char** argv) {
   input.add_border();
   input.write_string(1, 1, "> ");
   input.disable_delay();
+
+  client.login(*user, *pass);
 
   bool running = true;
   std::string buf;

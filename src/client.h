@@ -35,4 +35,6 @@ class Client {
     sock_.write(message + "\r\n");
   }
 
+  void login(const std::string& username, const std::string& password);
+
 };

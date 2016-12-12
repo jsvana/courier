@@ -19,5 +19,6 @@ executable(
       system_package("ncurses"),
       system_package("pthread"),
       system_package("ssl"),
+      system_package("stdc++fs"),
     ],
 )
