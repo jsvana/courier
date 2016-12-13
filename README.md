@@ -4,15 +4,13 @@
 
 ## Usage
 
-    $ courier <imap_server> <imap_port>
+    $ courier [config_file]
 
 This will only connect over SSL.
 
-From there, enter well-formed IMAP commands (IDs are prepended for you):
+The default config file location is `~/.config/courier/courier.conf`.
 
-    LOGIN <username> <password>
-    LIST "" %
-    FETCH ...
+The config file has an example [here](config.example).
 
 ## Motivation
 
@@ -25,7 +23,7 @@ Currently you'll need a compiler with C++1z support (I'm using G++ 6.2.1). This 
     $ bfg9000 configure build
     $ cd build
     $ ninja
-    $ ./courier <imap_server> <imap_port>
+    $ ./courier [config_file]
 
 ## License
 
