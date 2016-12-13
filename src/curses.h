@@ -7,6 +7,7 @@
 #include <curses.h>
 
 #include <map>
+#include <mutex>
 #include <string>
 
 namespace curses {
@@ -173,9 +174,13 @@ class ListWindow : public Window {
  private:
   std::map<int, Entry> entries_;
 
+  std::mutex entries_lock_;
+
   int entry_id = 0;
   int selected = entry_id;
   int offset = 0;
+
+  bool needs_sync_ = false;
 
   int next_id() {
     return entry_id++;
@@ -185,6 +190,10 @@ class ListWindow : public Window {
   ListWindow(int x, int y, int width, int height) : Window(x, y, width, height) {}
 
   int add_entry(const Entry& entry) {
+    std::lock_guard<std::mutex> guard(entries_lock_);
+
+    needs_sync_ = true;
+
     const auto next = next_id();
     entries_.emplace(next, entry);
     entries_.find(selected)->second.selected = true;
@@ -192,6 +201,13 @@ class ListWindow : public Window {
   }
 
   void sync_display() {
+    std::lock_guard<std::mutex> guard(entries_lock_);
+
+    if (!needs_sync_) {
+      return;
+    }
+    needs_sync_ = false;
+
     clear();
     for (auto& p : entries_) {
       if (p.first < offset || p.first >= offset + height_) {
@@ -201,7 +217,9 @@ class ListWindow : public Window {
     }
   }
 
-  bool update(Client&, Log& logfile) {
+  bool update(Client&, Log&) {
+    std::lock_guard<std::mutex> guard(entries_lock_);
+
     char c = get_char();
     int prev_selected = selected;
     switch (static_cast<DirectionKey>(c)) {
@@ -232,6 +250,7 @@ class ListWindow : public Window {
     if (prev_selected != selected) {
       entries_.find(prev_selected)->second.selected = false;
       entries_.find(selected)->second.selected = true;
+      needs_sync_ = true;
     }
     return true;
   }
