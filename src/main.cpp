@@ -1,6 +1,7 @@
 #include "client.h"
 #include "config.h"
 #include "curses.h"
+#include "log.h"
 #include "queue.h"
 
 #include <cstdlib>
@@ -62,11 +63,12 @@ int main(int argc, char** argv) {
   }
 
   Client client(*host, *port);
+  Log logfile("courier.log");
 
   if (!client.connect()) {
     return 1;
   } else {
-    std::cout << "Connected to " << *host << ":" << *port << std::endl;
+    logfile.info("Connected to " + *host + ":" + *port);
   }
 
   queue<bool> end_signal;
@@ -77,11 +79,6 @@ int main(int argc, char** argv) {
   curses::init();
 
   const auto dim = curses::dimensions();
-
-  // TODO(jsvana): arrange into screens that get pushed/poped instead of this
-  // nonsense
-  curses::Window log(0, 0, std::get<0>(dim), std::get<1>(dim) - 5);
-  log.enable_scroll();
 
   curses::Window input(0, std::get<1>(dim) - 5, std::get<0>(dim), 5);
   input.add_border();
@@ -95,7 +92,7 @@ int main(int argc, char** argv) {
   buf.reserve(256);
   while (running) {
     while (!read_q.empty()) {
-      log.add_line("< " + read_q.front());
+      logfile.info("< " + read_q.front());
       read_q.pop();
       input.move_cursor(3 + buf.length(), 1);
     }
@@ -113,7 +110,7 @@ int main(int argc, char** argv) {
       }
       const auto line = client.next_id() + " " + buf;
       client.write(line);
-      log.add_line("> " + line);
+      logfile.info("> " + line);
       buf.clear();
       input.clear_line(1);
       input.write_string(1, 1, "> ");
