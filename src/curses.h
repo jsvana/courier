@@ -6,6 +6,7 @@
 
 #include <curses.h>
 
+#include <map>
 #include <string>
 
 namespace curses {
@@ -47,14 +48,26 @@ char get_char() {
   return getch();
 }
 
+enum class DirectionKey : char {
+  LEFT = 'h',
+  DOWN = 'j',
+  UP = 'k',
+  RIGHT = 'l',
+};
+
 class Window {
+ protected:
+  int x_, y_;
+  int width_, height_;
+
  private:
   WINDOW* win_;
 
   bool has_border = false;
 
  public:
-  Window(int x, int y, int width, int height) : win_(newwin(height, width, y, x)) {
+  Window(int x, int y, int width, int height) : x_(x), y_(y), width_(width), height_(height),
+      win_(newwin(height, width, y, x)) {
     nodelay(win_, TRUE);
   }
 
@@ -78,6 +91,8 @@ class Window {
   void delete_char(int x, int y) {
     mvwdelch(win_, y, x);
   }
+
+  void clear() { wclear(win_); }
 
   char get_char() { return wgetch(win_); }
 
@@ -156,19 +171,69 @@ class InputWindow : public Window {
 
 class ListWindow : public Window {
  private:
-  std::unordered_map<unsigned int, Entry> entries_;
+  std::map<int, Entry> entries_;
 
-  unsigned int entry_id = 0;
+  int entry_id = 0;
+  int selected = entry_id;
+  int offset = 0;
 
-  unsigned int next_id() {
+  int next_id() {
     return entry_id++;
   }
 
  public:
-  unsigned int add_entry(const Entry& entry) {
+  ListWindow(int x, int y, int width, int height) : Window(x, y, width, height) {}
+
+  int add_entry(const Entry& entry) {
     const auto next = next_id();
     entries_.emplace(next, entry);
+    entries_.find(selected)->second.selected = true;
     return next;
+  }
+
+  void sync_display() {
+    clear();
+    for (auto& p : entries_) {
+      if (p.first < offset || p.first >= offset + height_) {
+        continue;
+      }
+      add_line(p.second.str());
+    }
+  }
+
+  bool update(Client&, Log& logfile) {
+    char c = get_char();
+    int prev_selected = selected;
+    switch (static_cast<DirectionKey>(c)) {
+    case DirectionKey::UP:
+      --selected;
+      if (selected < 0) {
+        selected = entries_.size() - 1;
+      }
+      if (selected < offset) {
+        --offset;
+      }
+      if (selected == static_cast<int>(entries_.size()) - 1) {
+        offset = entries_.size() - height_;
+      }
+      break;
+    case DirectionKey::DOWN:
+      selected = (selected + 1) % entries_.size();
+      if (selected >= offset + height_) {
+        ++offset;
+      }
+      if (selected == 0) {
+        offset = 0;
+      }
+      break;
+    default:
+      break;
+    }
+    if (prev_selected != selected) {
+      entries_.find(prev_selected)->second.selected = false;
+      entries_.find(selected)->second.selected = true;
+    }
+    return true;
   }
 };
 

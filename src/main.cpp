@@ -69,7 +69,11 @@ int main(int argc, char** argv) {
 
   const auto dim = curses::dimensions();
 
-  curses::InputWindow input(0, std::get<1>(dim) - 5, std::get<0>(dim), 5);
+  curses::ListWindow list(0, 0, std::get<0>(dim), std::get<1>(dim) - 5);
+
+  for (int i = 0; i < 100; i++) {
+    list.add_entry(Entry("test " + std::to_string(i)));
+  }
 
   client.login(user, pass);
 
@@ -79,13 +83,14 @@ int main(int argc, char** argv) {
     while (!read_q.empty()) {
       logfile.info("< " + read_q.front());
       read_q.pop();
-      input.sync_display();
     }
 
-    if (!input.update(client, logfile)) {
+    if (!list.update(client, logfile)) {
       client.stop();
       running = false;
     }
+
+    list.sync_display();
   }
 
   client_thread.join();
