@@ -71,10 +71,14 @@ int main(int argc, char** argv) {
     logfile.info("Connected to " + *host + ":" + *port);
   }
 
-  queue<bool> end_signal;
-  std::thread client_thread(client_runner, std::ref(client));
   std::queue<std::string> read_q;
-  std::thread client_reader_thread(client_reader, std::ref(client), std::ref(read_q), std::ref(end_signal));
+  queue<bool> end_signal;
+  std::thread client_thread([&client]() {
+    client_runner(client);
+  });
+  std::thread client_reader_thread([&client, &read_q, &end_signal]() {
+    client_reader(client, read_q, end_signal);
+  });
 
   curses::init();
 
