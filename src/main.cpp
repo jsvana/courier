@@ -13,13 +13,10 @@
 #include <thread>
 
 void client_reader(Client& client, std::queue<std::string>& read_q, std::atomic<bool>& running) {
-  while (true) {
+  while (running) {
     const auto line = client.read();
     if (!line.empty()) {
       read_q.push(line);
-    }
-    if (!running) {
-      break;
     }
   }
 }
