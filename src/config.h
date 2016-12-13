@@ -11,16 +11,15 @@ namespace fs = std::experimental::filesystem;
 class Config {
  private:
   const fs::path path_;
-  const std::tuple<std::unordered_map<std::string, std::string>, bool> parts_;
   const std::unordered_map<std::string, std::string> items_;
 
-  const std::tuple<std::unordered_map<std::string, std::string>, bool> build_parts(const fs::path& path);
+  const std::unordered_map<std::string, std::string> build_items(const fs::path& path);
 
  public:
   const bool okay;
 
-  Config(const fs::path& path) : path_(path), parts_(build_parts(path)),
-    items_(std::get<0>(parts_)), okay(std::get<1>(parts_)) {}
+  Config(const fs::path& path) : path_(path), items_(build_items(path)),
+    okay(!items_.empty()) {}
 
   const std::experimental::optional<std::string> get(const std::string& key);
 };

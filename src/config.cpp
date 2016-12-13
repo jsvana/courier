@@ -3,17 +3,17 @@
 #include <fstream>
 #include <iostream>
 
-const std::tuple<std::unordered_map<std::string, std::string>, bool> Config::build_parts(const fs::path& path) {
+const std::unordered_map<std::string, std::string> Config::build_items(const fs::path& path) {
   std::unordered_map<std::string, std::string> items;
   if (!fs::exists(path)) {
     std::cerr << "Config \"" << path << "\" does not exist" << std::endl;
-    return std::make_tuple(items, false);
+    return items;
   }
 
   std::ifstream config_f(path);
   if (!config_f.is_open()) {
     std::cerr << "Unable to open config file \"" << path << "\"" << std::endl;
-    return std::make_tuple(items, false);
+    return items;
   }
 
   std::string line;
@@ -26,7 +26,7 @@ const std::tuple<std::unordered_map<std::string, std::string>, bool> Config::bui
     items.emplace(line.substr(0, split), line.substr(split + 1));
   }
 
-  return std::make_tuple(items, true);
+  return items;
 }
 
 const std::experimental::optional<std::string> Config::get(const std::string& key) {

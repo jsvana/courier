@@ -34,34 +34,26 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  const auto host = config.get("host");
-  const auto port = config.get("port");
+  auto get_or_die = [&config](const std::string& key) {
+    const auto value = config.get(key);
+    if (!value) {
+      std::cerr << key << " not found in config" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+    return *value;
+  };
+  const auto host = get_or_die("host");
+  const auto port = get_or_die("port");
+  const auto user = get_or_die("user");
+  const auto pass = get_or_die("pass");
 
-  if (!host) {
-    std::cerr << "IMAP host not found in config" << std::endl;
-    return 1;
-  }
-
-  if (!port) {
-    std::cerr << "IMAP port not found in config" << std::endl;
-    return 1;
-  }
-
-  const auto user = config.get("user");
-  const auto pass = config.get("pass");
-
-  if (!user || !pass) {
-    std::cerr << "IMAP user or password not found in config" << std::endl;
-    return 1;
-  }
-
-  Client client(*host, *port);
+  Client client(host, port);
   Log logfile("courier.log");
 
   if (!client.connect()) {
     return 1;
   } else {
-    logfile.info("Connected to " + *host + ":" + *port);
+    logfile.info("Connected to " + host + ":" + port);
   }
 
   std::atomic<bool> running;
@@ -83,7 +75,7 @@ int main(int argc, char** argv) {
   input.write_string(1, 1, "> ");
   input.disable_delay();
 
-  client.login(*user, *pass);
+  client.login(user, pass);
 
   std::string buf;
   buf.reserve(256);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ctime>
+#include <chrono>
 #include <fstream>
 #include <iomanip>
 #include <string>
@@ -27,9 +27,8 @@ class Log {
   }
 
   void log(const LogLevel& level, const std::string& line) {
-    auto t = std::time(nullptr);
-    auto tm = *std::localtime(&t);
-    log_f << std::put_time(&tm, "%D %H:%M:%S") << " " << static_cast<char>(level) << " " << line << std::endl;
+    const auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    log_f << std::put_time(std::localtime(&now), "%D %H:%M:%S") << " " << static_cast<char>(level) << " " << line << std::endl;
   }
 
   void debug(const std::string& line) { log(LogLevel::DEBUG, line); }
