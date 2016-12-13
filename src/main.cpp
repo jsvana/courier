@@ -76,6 +76,10 @@ int main(int argc, char** argv) {
   }
 
   client.login(user, pass);
+  client.write("SELECT \"INBOX\"");
+
+  // TODO(jsvana): send fetch with callback to add to list
+  client.send("");
 
   std::string buf;
   buf.reserve(256);

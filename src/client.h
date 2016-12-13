@@ -13,6 +13,9 @@ class Client {
   std::string unfinished_line_;
   unsigned int message_id_ = 0;
 
+  // Map of message ID -> callback
+  std::unordered_map<std::string, std::function<Client&,
+
  public:
   Client(const std::string& host, const std::string& port) : sock_(host, port) {}
 
