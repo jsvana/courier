@@ -1,5 +1,9 @@
 #pragma once
 
+#include "client.h"
+#include "entry.h"
+#include "log.h"
+
 #include <curses.h>
 
 #include <string>
@@ -100,7 +104,72 @@ class Window {
     refresh();
   }
 
+  virtual void sync_display() = 0;
+  virtual bool update(Client& client, Log& logfile) = 0;
+
   // TODO(jsvana): handle resizes
+};
+
+class InputWindow : public Window {
+ private:
+  std::string buf_;
+
+ public:
+  InputWindow(int x, int y, int width, int height) : Window(x, y, width, height) {
+    add_border();
+    write_string(1, 1, "> ");
+    disable_delay();
+  }
+
+  void sync_display() {
+    move_cursor(3 + buf_.length(), 1);
+  }
+
+  bool update(Client& client, Log& logfile) {
+    char c = get_char();
+    if (c < 0) {
+      return true;
+    } else if (c == 27) { // Escape
+      return false;
+    } else if (c == 13) { // Enter
+      if (buf_.empty()) {
+        return true;
+      }
+      const auto line = client.next_id() + " " + buf_;
+      client.write(line);
+      logfile.info("> " + line);
+      buf_.clear();
+      clear_line(1);
+      write_string(1, 1, "> ");
+    } else if (c == 8 || c == 127) { // Backspace
+      buf_ = buf_.substr(0, buf_.length() - 1);
+      delete_char(3 + buf_.length(), 1);
+    } else {
+      buf_ += c;
+      // "|> "
+      write_char(2 + buf_.length(), 1, c);
+    }
+
+    return true;
+  }
+};
+
+class ListWindow : public Window {
+ private:
+  std::unordered_map<unsigned int, Entry> entries_;
+
+  unsigned int entry_id = 0;
+
+  unsigned int next_id() {
+    return entry_id++;
+  }
+
+ public:
+  unsigned int add_entry(const Entry& entry) {
+    const auto next = next_id();
+    entries_.emplace(next, entry);
+    return next;
+  }
 };
 
 } // namespace curses
