@@ -4,7 +4,7 @@
 
 bool SslSocket::connect() {
   boost::asio::ip::tcp::resolver resolver(io_service_);
-  boost::asio::ip::tcp::resolver::query query(host_, port_);
+  boost::asio::ip::tcp::resolver::query query(host, port);
   auto iterator = resolver.resolve(query);
 
   // No verification!

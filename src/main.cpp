@@ -64,7 +64,6 @@ int main(int argc, char** argv) {
   Client client(*host, *port);
 
   if (!client.connect()) {
-    std::cerr << "Error connecting to " << *host << ":" << *port << std::endl;
     return 1;
   } else {
     std::cout << "Connected to " << *host << ":" << *port << std::endl;

@@ -2,6 +2,16 @@
 
 #include <thread>
 
+bool Client::connect() {
+  try {
+    return sock_.connect();
+  } catch (const std::exception& e) {
+    std::cerr << "Error connecting to " << sock_.host << ":" << sock_.port
+      << ": " << e.what() << std::endl;
+    return false;
+  }
+}
+
 void Client::stop() {
   sock_.read_queue().push("\r\n");
   sock_.stop();

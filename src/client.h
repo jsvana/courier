@@ -16,7 +16,7 @@ class Client {
  public:
   Client(const std::string& host, const std::string& port) : sock_(host, port) {}
 
-  bool connect() { return sock_.connect(); }
+  bool connect();
 
   void run() { sock_.run(); }
 
