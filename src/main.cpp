@@ -4,6 +4,7 @@
 #include "log.h"
 #include "queue.h"
 
+#include <atomic>
 #include <cstdlib>
 #include <experimental/filesystem>
 #include <iostream>
@@ -11,18 +12,13 @@
 #include <queue>
 #include <thread>
 
-void client_runner(Client& client) {
-  client.run();
-}
-
-void client_reader(Client& client, std::queue<std::string>& read_q, queue<bool>& end_signal) {
+void client_reader(Client& client, std::queue<std::string>& read_q, std::atomic<bool>& running) {
   while (true) {
     const auto line = client.read();
-    if (line != "") {
+    if (!line.empty()) {
       read_q.push(line);
     }
-    if (!end_signal.empty()) {
-      end_signal.pop();
+    if (!running) {
       break;
     }
   }
@@ -71,13 +67,14 @@ int main(int argc, char** argv) {
     logfile.info("Connected to " + *host + ":" + *port);
   }
 
+  std::atomic<bool> running;
+  running.store(true);
   std::queue<std::string> read_q;
-  queue<bool> end_signal;
   std::thread client_thread([&client]() {
-    client_runner(client);
+    client.run();
   });
-  std::thread client_reader_thread([&client, &read_q, &end_signal]() {
-    client_reader(client, read_q, end_signal);
+  std::thread client_reader_thread([&client, &read_q, &running]() {
+    client_reader(client, read_q, running);
   });
 
   curses::init();
@@ -91,7 +88,6 @@ int main(int argc, char** argv) {
 
   client.login(*user, *pass);
 
-  bool running = true;
   std::string buf;
   buf.reserve(256);
   while (running) {
@@ -106,10 +102,9 @@ int main(int argc, char** argv) {
       continue;
     } else if (c == 27) { // Escape
       client.stop();
-      end_signal.push(true);
-      running = false;
+      running.store(false);
     } else if (c == 13) { // Enter
-      if (buf == "") {
+      if (buf.empty()) {
         continue;
       }
       const auto line = client.next_id() + " " + buf;
