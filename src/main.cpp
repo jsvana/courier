@@ -56,8 +56,7 @@ int main(int argc, char** argv) {
     logfile.info("Connected to " + host + ":" + port);
   }
 
-  std::atomic<bool> running;
-  running.store(true);
+  std::atomic<bool> running(true);
   std::queue<std::string> read_q;
   std::thread client_thread([&client]() {
     client.run();
@@ -91,7 +90,7 @@ int main(int argc, char** argv) {
       continue;
     } else if (c == 27) { // Escape
       client.stop();
-      running.store(false);
+      running = false;
     } else if (c == 13) { // Enter
       if (buf.empty()) {
         continue;
