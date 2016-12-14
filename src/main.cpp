@@ -15,14 +15,14 @@
 
 const int FETCH_COUNT = 10;
 
-void fetch_inbox(Client& client, Log& logfile, int start, int end, curses::EmailWindow& list) {
-  logfile.debug("FETCHING FROM " + std::to_string(start) + " TO " + std::to_string(end));
+void fetch_inbox(Client& client, int start, int end, curses::EmailWindow& list) {
+  logger::debug("FETCHING FROM " + std::to_string(start) + " TO " + std::to_string(end));
   client.send("FETCH " + std::to_string(start) + ":" + std::to_string(end)
-      + " (FLAGS BODY[HEADER.FIELDS (DATE FROM SUBJECT)])", [&client, &logfile, &list](std::vector<std::string>& lines) {
+      + " (FLAGS BODY[HEADER.FIELDS (DATE FROM SUBJECT)])", [&client, &list](std::vector<std::string>& lines) {
+    logger::debug("GOT EMAILS");
     // Parse emails
     std::vector<std::string> email_lines;
     for (const auto& line : lines) {
-      logfile.debug(line);
       if (line == ")") {
         list.add_email({email_lines});
         email_lines.clear();
@@ -59,18 +59,18 @@ int main(int argc, char** argv) {
   const auto user = get_or_die("user");
   const auto pass = get_or_die("pass");
 
-  Log logfile("courier.log");
-  Client client(host, port, logfile);
+  logger::init("courier.log");
+  Client client(host, port);
 
   if (!client.connect()) {
     return 1;
   } else {
-    logfile.info("Connected to " + host + ":" + port);
+    logger::info("Connected to " + host + ":" + port);
   }
 
   std::atomic<bool> running(true);
   std::queue<std::string> read_q;
-  std::thread client_thread([&client, &logfile, &running]() {
+  std::thread client_thread([&client, &running]() {
     client.run(running);
   });
 
@@ -80,8 +80,8 @@ int main(int argc, char** argv) {
 
   curses::EmailWindow list(0, 0, std::get<0>(dim), std::get<1>(dim) - 5);
 
-  client.login(user, pass, [&client, &logfile, &list](std::vector<std::string>&) {
-    client.send("SELECT \"INBOX\"", [&client, &logfile, &list](std::vector<std::string>& lines) {
+  client.login(user, pass, [&client, &list](std::vector<std::string>&) {
+    client.send("SELECT \"INBOX\"", [&client, &list](std::vector<std::string>& lines) {
       int start, end = -1;
       for (const auto& line : lines) {
         if (line.find("EXISTS") == std::string::npos) {
@@ -91,11 +91,11 @@ int main(int argc, char** argv) {
         start = end - FETCH_COUNT;
       }
       if (end == -1) {
-        logfile.error("Unable to find EXISTS in LOGIN response");
+        logger::error("Unable to find EXISTS in LOGIN response");
         return;
       }
 
-      fetch_inbox(client, logfile, start, end, list);
+      fetch_inbox(client, start, end, list);
     });
   });
 
@@ -103,11 +103,11 @@ int main(int argc, char** argv) {
   buf.reserve(256);
   while (running) {
     while (!read_q.empty()) {
-      logfile.info("< " + read_q.front());
+      logger::info("< " + read_q.front());
       read_q.pop();
     }
 
-    if (!list.update(client, logfile)) {
+    if (!list.update(client)) {
       client.stop();
       running = false;
     }

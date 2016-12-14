@@ -6,7 +6,7 @@ void client_reader(Client* client, std::atomic<bool>& running) {
   while (running) {
     const auto line = client->read();
 
-    client->log().debug("[RECV] " + line);
+    logger::debug("[RECV] " + line);
 
     if (line.find(client->MESSAGE_ID_PREFIX) == 0) {
       const auto line_id = line.substr(0, line.find(' '));

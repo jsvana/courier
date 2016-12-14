@@ -121,7 +121,7 @@ class Window {
   }
 
   virtual void sync_display() = 0;
-  virtual bool update(Client& client, Log& logfile) = 0;
+  virtual bool update(Client& client) = 0;
 
   // TODO(jsvana): handle resizes
 };
@@ -141,7 +141,7 @@ class InputWindow : public Window {
     move_cursor(3 + buf_.length(), 1);
   }
 
-  bool update(Client& client, Log&) {
+  bool update(Client& client) {
     char c = get_char();
     if (c < 0) {
       return true;
@@ -215,7 +215,7 @@ class EmailWindow : public Window {
     }
   }
 
-  bool update(Client&, Log&) {
+  bool update(Client&) {
     std::lock_guard<std::mutex> guard(emails_lock_);
 
     if (emails_.empty()) {
@@ -223,6 +223,12 @@ class EmailWindow : public Window {
     }
 
     char c = get_char();
+    if (c == 'q') {
+      return false;
+    }
+
+    // TODO(jsvana): on enter press open up specific email window
+
     int prev_selected = selected;
     switch (static_cast<DirectionKey>(c)) {
     case DirectionKey::UP:

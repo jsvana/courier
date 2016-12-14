@@ -19,8 +19,6 @@ class Client {
  private:
   SslSocket sock_;
 
-  Log& log_;
-
   std::string unfinished_line_;
   unsigned int message_id_ = 0;
 
@@ -36,8 +34,7 @@ class Client {
   std::string current_parsing_id;
   std::vector<std::string> current_lines;
 
-  Client(const std::string& host, const std::string& port, Log& log)
-    : sock_(host, port), log_(log) {}
+  Client(const std::string& host, const std::string& port) : sock_(host, port) {}
 
   bool connect();
 
@@ -55,7 +52,7 @@ class Client {
   }
 
   void write(const std::string& id, const std::string& message) {
-    log_.debug("[SEND] " + id + " " + message);
+    logger::debug("[SEND] " + id + " " + message);
     sock_.write(id + " " + message + "\r\n");
   }
 
@@ -72,7 +69,6 @@ class Client {
   void login(const std::string& username, const std::string& password, const ImapCallback& callback);
 
   SslSocket& socket() { return sock_; }
-  Log& log() { return log_; }
 
   std::unordered_map<std::string, ImapCallback>& callbacks() {
     return callbacks_;
