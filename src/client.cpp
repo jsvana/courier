@@ -2,7 +2,7 @@
 
 #include <thread>
 
-void client_reader(Client* client, std::atomic<bool>& running) {
+void client_reader(Client *client, std::atomic<bool> &running) {
   while (running) {
     const auto line = client->read();
 
@@ -32,21 +32,19 @@ void client_reader(Client* client, std::atomic<bool>& running) {
 bool Client::connect() {
   try {
     return sock_.connect();
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     std::cerr << "Error connecting to " << sock_.host << ":" << sock_.port
-      << ": " << e.what() << std::endl;
+              << ": " << e.what() << std::endl;
     return false;
   }
 }
 
-void Client::run(std::atomic<bool>& running) {
-  sock_thread_ = std::make_unique<std::thread>([this]() {
-    this->socket().run();
-  });
+void Client::run(std::atomic<bool> &running) {
+  sock_thread_ =
+      std::make_unique<std::thread>([this]() { this->socket().run(); });
 
-  client_reader_thread_ = std::make_unique<std::thread>([this, &running]() {
-    client_reader(this, running);
-  });
+  client_reader_thread_ = std::make_unique<std::thread>(
+      [this, &running]() { client_reader(this, running); });
 }
 
 void Client::stop() {
@@ -71,6 +69,7 @@ const std::string Client::read() {
   return line;
 }
 
-void Client::login(const std::string& username, const std::string& password, const ImapCallback& callback) {
+void Client::login(const std::string &username, const std::string &password,
+                   const ImapCallback &callback) {
   send("LOGIN " + username + " " + password, callback);
 }

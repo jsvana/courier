@@ -11,11 +11,11 @@
 #include <string>
 
 class SslSocket {
- public:
+public:
   const std::string host;
   const std::string port;
 
- private:
+private:
   queue<std::string> read_q_;
 
   std::array<char, 1024> buffer_;
@@ -27,11 +27,11 @@ class SslSocket {
 
   const std::string LINE_SEP = "\r\n";
 
- public:
+public:
   SslSocket(const std::string &in_host, const std::string &in_port)
-    : host(in_host), port(in_port),
-      ctx_(io_service_, boost::asio::ssl::context::sslv23), socket_(io_service_, ctx_) {
-  }
+      : host(in_host), port(in_port),
+        ctx_(io_service_, boost::asio::ssl::context::sslv23),
+        socket_(io_service_, ctx_) {}
 
   bool connect();
 
@@ -47,7 +47,5 @@ class SslSocket {
 
   void close();
 
-  queue<std::string> &read_queue() {
-    return read_q_;
-  }
+  queue<std::string> &read_queue() { return read_q_; }
 };

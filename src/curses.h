@@ -35,9 +35,7 @@ void init() {
   refresh();
 }
 
-void cleanup() {
-  endwin();
-}
+void cleanup() { endwin(); }
 
 const std::tuple<int, int> dimensions() {
   int x, y;
@@ -45,9 +43,7 @@ const std::tuple<int, int> dimensions() {
   return std::make_tuple(x, y);
 }
 
-char get_char() {
-  return getch();
-}
+char get_char() { return getch(); }
 
 enum class DirectionKey : char {
   LEFT = 'h',
@@ -57,18 +53,19 @@ enum class DirectionKey : char {
 };
 
 class Window {
- protected:
+protected:
   int x_, y_;
   int width_, height_;
 
- private:
-  WINDOW* win_;
+private:
+  WINDOW *win_;
 
   bool has_border = false;
 
- public:
-  Window(int x, int y, int width, int height) : x_(x), y_(y), width_(width), height_(height),
-      win_(newwin(height, width, y, x)) {
+public:
+  Window(int x, int y, int width, int height)
+      : x_(x), y_(y), width_(width), height_(height),
+        win_(newwin(height, width, y, x)) {
     nodelay(win_, TRUE);
   }
 
@@ -89,9 +86,7 @@ class Window {
 
   void move_cursor(int x, int y) { wmove(win_, y, x); }
 
-  void delete_char(int x, int y) {
-    mvwdelch(win_, y, x);
-  }
+  void delete_char(int x, int y) { mvwdelch(win_, y, x); }
 
   void clear() { wclear(win_); }
 
@@ -107,41 +102,40 @@ class Window {
 
   void write_char(int x, int y, char c) { mvwaddch(win_, y, x, c); }
 
-  void write_string(int x, int y, const std::string& str) {
+  void write_string(int x, int y, const std::string &str) {
     for (std::size_t i = 0; i < str.length(); i++) {
       write_char(x + i, y, str[i]);
     }
     refresh();
   }
 
-  void add_line(const std::string& str) {
+  void add_line(const std::string &str) {
     wprintw(win_, str.c_str());
     wprintw(win_, "\n");
     refresh();
   }
 
   virtual void sync_display() = 0;
-  virtual bool update(Client& client) = 0;
+  virtual bool update(Client &client) = 0;
 
   // TODO(jsvana): handle resizes
 };
 
 class InputWindow : public Window {
- private:
+private:
   std::string buf_;
 
- public:
-  InputWindow(int x, int y, int width, int height) : Window(x, y, width, height) {
+public:
+  InputWindow(int x, int y, int width, int height)
+      : Window(x, y, width, height) {
     add_border();
     write_string(1, 1, "> ");
     disable_delay();
   }
 
-  void sync_display() {
-    move_cursor(3 + buf_.length(), 1);
-  }
+  void sync_display() { move_cursor(3 + buf_.length(), 1); }
 
-  bool update(Client& client) {
+  bool update(Client &client) {
     char c = get_char();
     if (c < 0) {
       return true;
@@ -169,7 +163,7 @@ class InputWindow : public Window {
 };
 
 class EmailWindow : public Window {
- private:
+private:
   std::list<Email> emails_;
 
   std::mutex emails_lock_;
@@ -179,10 +173,11 @@ class EmailWindow : public Window {
 
   bool needs_sync_ = false;
 
- public:
-  EmailWindow(int x, int y, int width, int height) : Window(x, y, width, height) {}
+public:
+  EmailWindow(int x, int y, int width, int height)
+      : Window(x, y, width, height) {}
 
-  void add_email(const std::vector<std::string>& email_lines) {
+  void add_email(const std::vector<std::string> &email_lines) {
     std::lock_guard<std::mutex> guard(emails_lock_);
     needs_sync_ = true;
     emails_.emplace_back(email_lines);
@@ -198,7 +193,7 @@ class EmailWindow : public Window {
 
     clear();
     int i = 0;
-    for (const auto& email : emails_) {
+    for (const auto &email : emails_) {
       if (i < offset_ || i >= offset_ + height_) {
         continue;
       }
@@ -207,7 +202,7 @@ class EmailWindow : public Window {
     }
   }
 
-  bool update(Client&) {
+  bool update(Client &) {
     std::lock_guard<std::mutex> guard(emails_lock_);
 
     if (emails_.empty()) {

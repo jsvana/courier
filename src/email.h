@@ -11,8 +11,8 @@ struct Email {
   std::string from;
   std::string subject;
 
-  Email(const std::vector<std::string>& lines) {
-    for (const auto& line : lines) {
+  Email(const std::vector<std::string> &lines) {
+    for (const auto &line : lines) {
       if (line[0] == '*') {
         id = std::stoi(line.data() + 2);
         seen = line.find("\\Seen") != std::string::npos;

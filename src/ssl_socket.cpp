@@ -29,7 +29,10 @@ bool SslSocket::connect() {
 }
 
 void SslSocket::run() {
-  socket_.async_read_some(boost::asio::buffer(buffer_), boost::bind(&SslSocket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+  socket_.async_read_some(
+      boost::asio::buffer(buffer_),
+      boost::bind(&SslSocket::read, this, boost::asio::placeholders::error,
+                  boost::asio::placeholders::bytes_transferred));
 
   io_service_.run();
 }
@@ -44,7 +47,8 @@ void SslSocket::write_lines(const std::vector<std::string> &lines) {
   }
 }
 
-void SslSocket::read(const boost::system::error_code &error, std::size_t bytes) {
+void SslSocket::read(const boost::system::error_code &error,
+                     std::size_t bytes) {
   if (error) {
     close();
     return;
@@ -52,7 +56,10 @@ void SslSocket::read(const boost::system::error_code &error, std::size_t bytes) 
 
   std::string data(buffer_.data(), bytes);
   read_q_.push(data);
-  socket_.async_read_some(boost::asio::buffer(buffer_), boost::bind(&SslSocket::read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+  socket_.async_read_some(
+      boost::asio::buffer(buffer_),
+      boost::bind(&SslSocket::read, this, boost::asio::placeholders::error,
+                  boost::asio::placeholders::bytes_transferred));
 }
 
 void SslSocket::close() {
