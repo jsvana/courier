@@ -4,28 +4,34 @@
 #include <tuple>
 #include <vector>
 
+struct EmailParts {
+  int id;
+  bool seen;
+  std::string date;
+  std::string from;
+  std::string subject;
+};
+
 class Email {
  private:
-  const std::tuple<int, bool, std::string, std::string, std::string> parts_;
+  const EmailParts parts_;
 
-  const std::tuple<int, bool, std::string, std::string, std::string> get_parts(const std::vector<std::string>& lines) {
-    int id;
-    bool seen;
-    std::string subject, date, from;
+  const EmailParts get_parts(const std::vector<std::string>& lines) {
+    EmailParts parts;
     for (const auto& line : lines) {
       if (line[0] == '*') {
-        id = std::stoi(line.data() + 2);
-        seen = line.find("\\Seen") != std::string::npos;
+        parts.id = std::stoi(line.data() + 2);
+        parts.seen = line.find("\\Seen") != std::string::npos;
       } else if (line.find("Subject: ") == 0) {
-        subject = line.substr(line.find(' ') + 1);
+        parts.subject = line.substr(line.find(' ') + 1);
       } else if (line.find("Date: ") == 0) {
-        date = line.substr(line.find(' ') + 1);
+        parts.date = line.substr(line.find(' ') + 1);
       } else if (line.find("From: ") == 0) {
-        from = line.substr(line.find(' ') + 1);
+        parts.from = line.substr(line.find(' ') + 1);
       }
     }
 
-    return std::make_tuple(id, seen, subject, date, from);
+    return parts;
   }
 
  public:
@@ -38,8 +44,7 @@ class Email {
   const std::string from;
 
   Email(const std::vector<std::string>& lines) : parts_(get_parts(lines)),
-    id(std::get<0>(parts_)), seen(std::get<1>(parts_)),
-    subject(std::get<2>(parts_)), date(std::get<3>(parts_)), from(std::get<4>(parts_)) {}
+    id(parts_.id), seen(parts_.id), subject(parts_.subject), date(parts_.date), from(parts_.from) {}
 
   const std::string str() {
     std::string ret;
