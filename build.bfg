@@ -11,6 +11,7 @@ executable(
       "-pedantic",
       "-Wno-deprecated-declarations",
       "-std=c++1z",
+      "-ggdb",
     ],
     packages=[
       boost_package("system"),

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "client.h"
-#include "entry.h"
+#include "email.h"
 #include "log.h"
 
 #include <curses.h>
@@ -141,7 +141,7 @@ class InputWindow : public Window {
     move_cursor(3 + buf_.length(), 1);
   }
 
-  bool update(Client& client, Log& logfile) {
+  bool update(Client& client, Log&) {
     char c = get_char();
     if (c < 0) {
       return true;
@@ -151,9 +151,7 @@ class InputWindow : public Window {
       if (buf_.empty()) {
         return true;
       }
-      const auto line = client.next_id() + " " + buf_;
-      client.write(line);
-      logfile.info("> " + line);
+      client.send(buf_);
       buf_.clear();
       clear_line(1);
       write_string(1, 1, "> ");
@@ -170,11 +168,11 @@ class InputWindow : public Window {
   }
 };
 
-class ListWindow : public Window {
+class EmailWindow : public Window {
  private:
-  std::map<int, Entry> entries_;
+  std::map<int, Email> emails_;
 
-  std::mutex entries_lock_;
+  std::mutex emails_lock_;
 
   int entry_id = 0;
   int selected = entry_id;
@@ -187,21 +185,21 @@ class ListWindow : public Window {
   }
 
  public:
-  ListWindow(int x, int y, int width, int height) : Window(x, y, width, height) {}
+  EmailWindow(int x, int y, int width, int height) : Window(x, y, width, height) {}
 
-  int add_entry(const Entry& entry) {
-    std::lock_guard<std::mutex> guard(entries_lock_);
+  int add_email(const Email& email) {
+    std::lock_guard<std::mutex> guard(emails_lock_);
 
     needs_sync_ = true;
 
     const auto next = next_id();
-    entries_.emplace(next, entry);
-    entries_.find(selected)->second.selected = true;
+    emails_.emplace(next, email);
+    emails_.find(selected)->second.selected = true;
     return next;
   }
 
   void sync_display() {
-    std::lock_guard<std::mutex> guard(entries_lock_);
+    std::lock_guard<std::mutex> guard(emails_lock_);
 
     if (!needs_sync_) {
       return;
@@ -209,7 +207,7 @@ class ListWindow : public Window {
     needs_sync_ = false;
 
     clear();
-    for (auto& p : entries_) {
+    for (auto& p : emails_) {
       if (p.first < offset || p.first >= offset + height_) {
         continue;
       }
@@ -218,7 +216,11 @@ class ListWindow : public Window {
   }
 
   bool update(Client&, Log&) {
-    std::lock_guard<std::mutex> guard(entries_lock_);
+    std::lock_guard<std::mutex> guard(emails_lock_);
+
+    if (emails_.empty()) {
+      return true;
+    }
 
     char c = get_char();
     int prev_selected = selected;
@@ -226,17 +228,17 @@ class ListWindow : public Window {
     case DirectionKey::UP:
       --selected;
       if (selected < 0) {
-        selected = entries_.size() - 1;
+        selected = emails_.size() - 1;
       }
       if (selected < offset) {
         --offset;
       }
-      if (selected == static_cast<int>(entries_.size()) - 1) {
-        offset = entries_.size() - height_;
+      if (selected == static_cast<int>(emails_.size()) - 1) {
+        offset = emails_.size() - height_;
       }
       break;
     case DirectionKey::DOWN:
-      selected = (selected + 1) % entries_.size();
+      selected = (selected + 1) % emails_.size();
       if (selected >= offset + height_) {
         ++offset;
       }
@@ -248,8 +250,8 @@ class ListWindow : public Window {
       break;
     }
     if (prev_selected != selected) {
-      entries_.find(prev_selected)->second.selected = false;
-      entries_.find(selected)->second.selected = true;
+      emails_.find(prev_selected)->second.selected = false;
+      emails_.find(selected)->second.selected = true;
       needs_sync_ = true;
     }
     return true;

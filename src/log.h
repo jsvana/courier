@@ -3,6 +3,7 @@
 #include <chrono>
 #include <fstream>
 #include <iomanip>
+#include <mutex>
 #include <string>
 
 enum class LogLevel : char {
@@ -17,6 +18,8 @@ class Log {
   const std::string path_;
   std::ofstream log_f;
 
+  std::mutex file_lock_;
+
  public:
   Log(const std::string& path) : path_(path) {
     log_f.open(path, std::ios::out | std::ios::app);
@@ -27,6 +30,7 @@ class Log {
   }
 
   void log(const LogLevel& level, const std::string& line) {
+    std::lock_guard<std::mutex> guard(file_lock_);
     const auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     log_f << std::put_time(std::localtime(&now), "%D %H:%M:%S") << " " << static_cast<char>(level) << " " << line << std::endl;
   }

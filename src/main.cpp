@@ -1,6 +1,7 @@
 #include "client.h"
 #include "config.h"
 #include "curses.h"
+#include "email.h"
 #include "log.h"
 #include "queue.h"
 
@@ -12,13 +13,24 @@
 #include <queue>
 #include <thread>
 
-void client_reader(Client& client, std::queue<std::string>& read_q, std::atomic<bool>& running) {
-  while (running) {
-    const auto line = client.read();
-    if (!line.empty()) {
-      read_q.push(line);
+const int FETCH_COUNT = 10;
+
+void fetch_inbox(Client& client, Log& logfile, int start, int end, curses::EmailWindow& list) {
+  logfile.debug("FETCHING FROM " + std::to_string(start) + " TO " + std::to_string(end));
+  client.send("FETCH " + std::to_string(start) + ":" + std::to_string(end)
+      + " (FLAGS BODY[HEADER.FIELDS (DATE FROM SUBJECT)])", [&client, &logfile, &list](std::vector<std::string>& lines) {
+    // Parse emails
+    std::vector<std::string> email_lines;
+    for (const auto& line : lines) {
+      logfile.debug(line);
+      if (line == ")") {
+        list.add_email({email_lines});
+        email_lines.clear();
+        continue;
+      }
+      email_lines.push_back(line);
     }
-  }
+  });
 }
 
 int main(int argc, char** argv) {
@@ -47,8 +59,8 @@ int main(int argc, char** argv) {
   const auto user = get_or_die("user");
   const auto pass = get_or_die("pass");
 
-  Client client(host, port);
   Log logfile("courier.log");
+  Client client(host, port, logfile);
 
   if (!client.connect()) {
     return 1;
@@ -58,28 +70,34 @@ int main(int argc, char** argv) {
 
   std::atomic<bool> running(true);
   std::queue<std::string> read_q;
-  std::thread client_thread([&client]() {
-    client.run();
-  });
-  std::thread client_reader_thread([&client, &read_q, &running]() {
-    client_reader(client, read_q, running);
+  std::thread client_thread([&client, &logfile, &running]() {
+    client.run(running);
   });
 
   curses::init();
 
   const auto dim = curses::dimensions();
 
-  curses::ListWindow list(0, 0, std::get<0>(dim), std::get<1>(dim) - 5);
+  curses::EmailWindow list(0, 0, std::get<0>(dim), std::get<1>(dim) - 5);
 
-  for (int i = 0; i < 100; i++) {
-    list.add_entry(Entry("test " + std::to_string(i)));
-  }
+  client.login(user, pass, [&client, &logfile, &list](std::vector<std::string>&) {
+    client.send("SELECT \"INBOX\"", [&client, &logfile, &list](std::vector<std::string>& lines) {
+      int start, end = -1;
+      for (const auto& line : lines) {
+        if (line.find("EXISTS") == std::string::npos) {
+          continue;
+        }
+        end = std::stoi(line.data() + 2);
+        start = end - FETCH_COUNT;
+      }
+      if (end == -1) {
+        logfile.error("Unable to find EXISTS in LOGIN response");
+        return;
+      }
 
-  client.login(user, pass);
-  client.write("SELECT \"INBOX\"");
-
-  // TODO(jsvana): send fetch with callback to add to list
-  client.send("");
+      fetch_inbox(client, logfile, start, end, list);
+    });
+  });
 
   std::string buf;
   buf.reserve(256);
@@ -98,7 +116,6 @@ int main(int argc, char** argv) {
   }
 
   client_thread.join();
-  client_reader_thread.join();
 
   curses::cleanup();
 
