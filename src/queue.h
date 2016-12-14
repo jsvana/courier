@@ -4,13 +4,14 @@
 #include <mutex>
 #include <queue>
 
-template <typename T> class queue {
-private:
+template <typename T>
+class queue {
+ private:
   std::mutex q_lock_;
   std::condition_variable cv_;
   std::queue<T> q_;
 
-public:
+ public:
   void push(T value) {
     std::lock_guard<std::mutex> guard(q_lock_);
     cv_.notify_all();

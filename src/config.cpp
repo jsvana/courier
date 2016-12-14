@@ -3,8 +3,8 @@
 #include <fstream>
 #include <iostream>
 
-const std::unordered_map<std::string, std::string>
-Config::build_items(const fs::path &path) {
+const std::unordered_map<std::string, std::string> Config::build_items(
+    const fs::path& path) {
   std::unordered_map<std::string, std::string> items;
   if (!fs::exists(path)) {
     std::cerr << "Config \"" << path << "\" does not exist" << std::endl;
@@ -30,8 +30,8 @@ Config::build_items(const fs::path &path) {
   return items;
 }
 
-const std::experimental::optional<std::string>
-Config::get(const std::string &key) {
+const std::experimental::optional<std::string> Config::get(
+    const std::string& key) {
   auto iter = items_.find(key);
   if (iter == items_.end()) {
     return std::experimental::nullopt;

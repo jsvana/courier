@@ -10,7 +10,7 @@ bool SslSocket::connect() {
   // No verification!
   ctx_.set_verify_mode(boost::asio::ssl::context::verify_none);
 
-  auto &socket = socket_.lowest_layer();
+  auto& socket = socket_.lowest_layer();
 
   boost::asio::ip::tcp::resolver::iterator end;
   boost::system::error_code error = boost::asio::error::host_not_found;
@@ -37,17 +37,17 @@ void SslSocket::run() {
   io_service_.run();
 }
 
-void SslSocket::write(const std::string &message) {
+void SslSocket::write(const std::string& message) {
   boost::asio::write(socket_, boost::asio::buffer(message));
 }
 
-void SslSocket::write_lines(const std::vector<std::string> &lines) {
-  for (const auto &line : lines) {
+void SslSocket::write_lines(const std::vector<std::string>& lines) {
+  for (const auto& line : lines) {
     write(line);
   }
 }
 
-void SslSocket::read(const boost::system::error_code &error,
+void SslSocket::read(const boost::system::error_code& error,
                      std::size_t bytes) {
   if (error) {
     close();

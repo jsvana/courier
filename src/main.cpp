@@ -17,16 +17,16 @@
 
 const int FETCH_COUNT = 10;
 
-void fetch_inbox(Client &client, int start, int end,
-                 curses::EmailWindow &list) {
+void fetch_inbox(Client& client, int start, int end,
+                 curses::EmailWindow& list) {
   logger::debug("Fetching emails from " + std::to_string(start) + " to " +
                 std::to_string(end));
   client.send("FETCH " + std::to_string(start) + ":" + std::to_string(end) +
                   " (FLAGS BODY[HEADER.FIELDS (DATE FROM SUBJECT)])",
-              [&client, &list](std::vector<std::string> &lines) {
+              [&client, &list](std::vector<std::string>& lines) {
                 // Parse emails
                 std::vector<std::string> email_lines;
-                for (const auto &line : lines) {
+                for (const auto& line : lines) {
                   if (line == ")") {
                     list.add_email(email_lines);
                     email_lines.clear();
@@ -37,12 +37,12 @@ void fetch_inbox(Client &client, int start, int end,
               });
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   const flags::args args(argc, argv);
 
-  auto get_option = [&args](const std::vector<std::string> &aliases,
+  auto get_option = [&args](const std::vector<std::string>& aliases,
                             auto default_val) {
-    for (const auto &alias : aliases) {
+    for (const auto& alias : aliases) {
       const auto val = args.get<decltype(default_val)>(alias);
       if (val) {
         return *val;
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  auto get_or_die = [&config](const std::string &key) {
+  auto get_or_die = [&config](const std::string& key) {
     const auto value = config.get(key);
     if (!value) {
       std::cerr << key << " not found in config" << std::endl;
@@ -103,11 +103,11 @@ int main(int argc, char **argv) {
 
   curses::EmailWindow list(0, 0, std::get<0>(dim), std::get<1>(dim) - 5);
 
-  client.login(user, pass, [&client, &list](std::vector<std::string> &) {
+  client.login(user, pass, [&client, &list](std::vector<std::string>&) {
     client.send("SELECT \"INBOX\"",
-                [&client, &list](std::vector<std::string> &lines) {
+                [&client, &list](std::vector<std::string>& lines) {
                   int start, end = -1;
-                  for (const auto &line : lines) {
+                  for (const auto& line : lines) {
                     if (line.find("EXISTS") == std::string::npos) {
                       continue;
                     }
