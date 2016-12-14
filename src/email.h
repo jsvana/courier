@@ -5,7 +5,6 @@
 #include <vector>
 
 struct Email {
-  bool selected = false;
   int id;
   bool seen;
   std::string date;
@@ -27,18 +26,12 @@ struct Email {
     }
   }
 
-  const std::string str() {
+  const std::string str() const {
     std::string ret;
-    if (selected) {
-      ret = "*";
-    } else {
-      ret = " ";
-    }
-    ret += " ";
     if (seen) {
-      ret += "-";
+      ret = "-";
     } else {
-      ret += "@";
+      ret = "@";
     }
     return ret + " " + date + " - " + from + ": " + subject;
   }

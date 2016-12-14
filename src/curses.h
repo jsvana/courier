@@ -6,7 +6,7 @@
 
 #include <curses.h>
 
-#include <map>
+#include <list>
 #include <mutex>
 #include <string>
 
@@ -170,32 +170,22 @@ class InputWindow : public Window {
 
 class EmailWindow : public Window {
  private:
-  std::map<int, Email> emails_;
+  std::list<Email> emails_;
 
   std::mutex emails_lock_;
 
-  int entry_id = 0;
-  int selected = entry_id;
-  int offset = 0;
+  int selected_ = 0;
+  int offset_ = 0;
 
   bool needs_sync_ = false;
-
-  int next_id() {
-    return entry_id++;
-  }
 
  public:
   EmailWindow(int x, int y, int width, int height) : Window(x, y, width, height) {}
 
-  int add_email(const std::vector<std::string>& email_lines) {
+  void add_email(const std::vector<std::string>& email_lines) {
     std::lock_guard<std::mutex> guard(emails_lock_);
-
     needs_sync_ = true;
-
-    const auto next = next_id();
-    emails_.emplace(next, email_lines);
-    emails_.find(selected)->second.selected = true;
-    return next;
+    emails_.emplace_back(email_lines);
   }
 
   void sync_display() {
@@ -207,11 +197,13 @@ class EmailWindow : public Window {
     needs_sync_ = false;
 
     clear();
-    for (auto& p : emails_) {
-      if (p.first < offset || p.first >= offset + height_) {
+    int i = 0;
+    for (const auto& email : emails_) {
+      if (i < offset_ || i >= offset_ + height_) {
         continue;
       }
-      add_line(p.second.str());
+      add_line(std::string(selected_ == i ? "*" : " ") + " " + email.str());
+      ++i;
     }
   }
 
@@ -229,35 +221,33 @@ class EmailWindow : public Window {
 
     // TODO(jsvana): on enter press open up specific email window
 
-    int prev_selected = selected;
+    int prev_selected_ = selected_;
     switch (static_cast<DirectionKey>(c)) {
     case DirectionKey::UP:
-      --selected;
-      if (selected < 0) {
-        selected = emails_.size() - 1;
+      --selected_;
+      if (selected_ < 0) {
+        selected_ = emails_.size() - 1;
       }
-      if (selected < offset) {
-        --offset;
+      if (selected_ < offset_) {
+        --offset_;
       }
-      if (selected == static_cast<int>(emails_.size()) - 1) {
-        offset = emails_.size() - height_;
+      if (selected_ == static_cast<int>(emails_.size()) - 1) {
+        offset_ = emails_.size() - height_;
       }
       break;
     case DirectionKey::DOWN:
-      selected = (selected + 1) % emails_.size();
-      if (selected >= offset + height_) {
-        ++offset;
+      selected_ = (selected_ + 1) % emails_.size();
+      if (selected_ >= offset_ + height_) {
+        ++offset_;
       }
-      if (selected == 0) {
-        offset = 0;
+      if (selected_ == 0) {
+        offset_ = 0;
       }
       break;
     default:
       break;
     }
-    if (prev_selected != selected) {
-      emails_.find(prev_selected)->second.selected = false;
-      emails_.find(selected)->second.selected = true;
+    if (prev_selected_ != selected_) {
       needs_sync_ = true;
     }
     return true;
