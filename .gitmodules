@@ -1,0 +1,3 @@
+[submodule "include/flags"]
+	path = include/flags
+	url = https://github.com/sailormoon/flags.git

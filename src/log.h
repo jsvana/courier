@@ -17,6 +17,8 @@ enum class LogLevel : char {
 
 void init(const std::string &path);
 
+void set_level(const LogLevel &level);
+
 void log(const LogLevel &level, const std::string &line);
 
 void debug(const std::string &line);

@@ -5,6 +5,8 @@
 #include "log.h"
 #include "queue.h"
 
+#include "flags/include/flags.h"
+
 #include <atomic>
 #include <cstdlib>
 #include <experimental/filesystem>
@@ -36,12 +38,33 @@ void fetch_inbox(Client &client, int start, int end,
 }
 
 int main(int argc, char **argv) {
-  fs::path config_path;
-  if (argc > 1) {
-    config_path = argv[1];
-  } else {
-    config_path = fs::path(getenv("HOME")) / ".config/courier/courier.conf";
+  const flags::args args(argc, argv);
+
+  auto get_option = [&args](const std::vector<std::string> &aliases,
+                            auto default_val) {
+    for (const auto &alias : aliases) {
+      const auto val = args.get<decltype(default_val)>(alias);
+      if (val) {
+        return *val;
+      }
+    }
+    return default_val;
+  };
+
+  if (get_option({"h", "help"}, false)) {
+    std::cout << "Usage: " << argv[0]
+              << " [-v|--verbost] [--config-file PATH] [-h|--help]" << std::endl
+              << std::endl;
+    std::cout << "Courier is a simple TUI IMAP client." << std::endl;
+    return 0;
   }
+
+  if (get_option({"v", "verbose"}, false)) {
+    logger::set_level(logger::LogLevel::DEBUG);
+  }
+
+  const auto config_path = args.get<fs::path>(
+      "config-path", fs::path(getenv("HOME")) / ".config/courier/courier.conf");
 
   Config config(config_path);
   if (!config.okay) {
