@@ -187,13 +187,13 @@ class EmailWindow : public Window {
  public:
   EmailWindow(int x, int y, int width, int height) : Window(x, y, width, height) {}
 
-  int add_email(const Email& email) {
+  int add_email(const std::vector<std::string>& email_lines) {
     std::lock_guard<std::mutex> guard(emails_lock_);
 
     needs_sync_ = true;
 
     const auto next = next_id();
-    emails_.emplace(next, email);
+    emails_.emplace(next, email_lines);
     emails_.find(selected)->second.selected = true;
     return next;
   }

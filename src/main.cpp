@@ -16,15 +16,14 @@
 const int FETCH_COUNT = 10;
 
 void fetch_inbox(Client& client, int start, int end, curses::EmailWindow& list) {
-  logger::debug("FETCHING FROM " + std::to_string(start) + " TO " + std::to_string(end));
+  logger::debug("Fetching emails from " + std::to_string(start) + " to " + std::to_string(end));
   client.send("FETCH " + std::to_string(start) + ":" + std::to_string(end)
       + " (FLAGS BODY[HEADER.FIELDS (DATE FROM SUBJECT)])", [&client, &list](std::vector<std::string>& lines) {
-    logger::debug("GOT EMAILS");
     // Parse emails
     std::vector<std::string> email_lines;
     for (const auto& line : lines) {
       if (line == ")") {
-        list.add_email({email_lines});
+        list.add_email(email_lines);
         email_lines.clear();
         continue;
       }
